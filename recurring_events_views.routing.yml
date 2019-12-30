@@ -1,0 +1,7 @@
+recurring_events_views.settings:
+  path: '/admin/config/development/recurring-events-views'
+  defaults:
+    _title: 'Recurring Events Views Settings'
+    _form: '\Drupal\recurring_events_views\Form\RecurringEventsViewsConfigForm'
+  requirements:
+    _permission: 'administer recurring_events_views'

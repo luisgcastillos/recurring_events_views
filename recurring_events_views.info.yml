@@ -1,0 +1,9 @@
+name: Recurring Events Views
+core: 8.x
+type: module
+description: Recurring Events Views
+package: Custom
+configure: recurring_events_views.settings
+dependencies:
+  - drupal:views
+  - drupal:date_recur

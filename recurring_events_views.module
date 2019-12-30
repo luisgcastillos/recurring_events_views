@@ -1,0 +1,114 @@
+<?php
+
+use \Drupal\Core\DateTime\DrupalDateTime;
+use \Drupal\date_recur\Plugin\Field\FieldType\DateRecurFieldItemList;
+
+function drupal_playground_theme_preprocess_views_view_unformatted(&$variables) {
+  $config = Drupal::config('recurring_events_views.settings');
+
+  // Get the field name and timezone declared in the module settings
+  $date_field_name = $config->get('date_field_name');
+  $date_timezone = $config->get('date_timezone');
+  $view_name = $config->get('view_name');
+
+  // Check to see if this is an event view
+  if ($variables['view']->id() != $view_name) {
+    return;
+  }
+
+  // This Preprocess is only needed when outputing a Node
+  if (!isset($variables['rows'][0]['content']['#node'])) {
+    return;
+  }
+
+  $loopIndex = 0;
+  $date_occurrences = [];
+
+  foreach ($variables['view']->result as $rowResult) {
+    // Check that the row result entity has the field we are looking for
+    if (isset($rowResult->_entity) && $rowResult->_entity->hasField($date_field_name)) {
+      $dateField = $rowResult->_entity->get($date_field_name);
+
+      // Check that the field we are looking for is a Date Recur field
+      if ($dateField instanceof DateRecurFieldItemList && $dateField->getValue()) {
+
+        // Get the initial occurrence of the recurring event
+        $firstEventDate = $rowResult->_entity->get($date_field_name)->getValue()[0];
+    
+        // Get the difference between the start time and end time from the initial occurrence
+        $firstStartDate = new DateTime($firstEventDate['value'], new DateTimeZone('UTC'));
+        $firstEndDate = new DateTime($firstEventDate['end_value'], new DateTimeZone('UTC'));
+        $dateDifference = $firstStartDate->diff($firstEndDate);
+    
+        // Get the date string of this date occurrence
+        $startDateString = $rowResult->date_recur__node__field_event_date_node_field_data_field_eve;
+        
+        // Create a DateTime object for the start time of this date occurrence
+        $startDateTime = new DateTime($startDateString, new DateTimeZone('UTC'));
+        $startDateTime = $startDateTime->setTimezone(new DateTimeZone($date_timezone));
+    
+        // Create a DateTime object for the end time of this date occurrence
+        $endDateTime = new DateTime($startDateString, new DateTimeZone('UTC'));
+        $endDateTime = $endDateTime->setTimezone(new DateTimeZone($date_timezone));
+        
+        // Use the difference from the initial occurrence to get the end time for this occurence
+        _drupal_playground_theme_get_end_date($endDateTime, $dateDifference);
+        
+        // Create an array with the date in several formats to use in the Twig Template
+        $date_occurrence = array(
+          'startDateQuery' => $startDateTime->format('Y-m-d\TH:i:s'),
+          'startDateDay' => $startDateTime->format('j'),
+          'startDateMonth' => $startDateTime->format('m'),
+          'startDateMonthText' => $startDateTime->format('F'),
+          'startDateYear' => $startDateTime->format('Y'),
+          'startDateTime' => $startDateTime->format('h:i:s a'),
+          'startDateDayOfWeek' => $startDateTime->format('l'),
+          'startDateReadable' => $startDateTime->format('l, F j, Y'),
+          'endDateQuery' => $endDateTime->format('Y-m-d\TH:i:s'),
+          'endDateDay' => $endDateTime->format('j'),
+          'endDateMonth' => $endDateTime->format('m'),
+          'endDateMonthText' => $endDateTime->format('F'),
+          'endDateYear' => $endDateTime->format('Y'),
+          'endDateTime' => $endDateTime->format('h:i:s a'),
+          'endDateDayOfWeek' => $endDateTime->format('l'),
+          'endDateReadable' => $endDateTime->format('l, F j, Y'),
+        );
+    
+        array_push($date_occurrences, $date_occurrence);
+        $loopIndex++;
+      }
+    }
+  }
+  
+  $_SESSION['date_occurrence_index'] = 0;
+  $_SESSION['date_occurrences'] = $date_occurrences;
+}
+
+function drupal_playground_theme_preprocess_node(&$variables) {
+  $variables['#cache']['max-age'] = 0;
+  
+  $variables['dateOccurrence'] = $_SESSION['date_occurrences'][$_SESSION['date_occurrence_index']];
+  $variables['sessionOccurrenceIndex'] = $_SESSION['date_occurrence_index'];
+  $_SESSION['date_occurrence_index'] = $_SESSION['date_occurrence_index'] + 1;
+}
+
+function _drupal_playground_theme_get_end_date($end_time, $date_interval) {
+  if ($date_interval->y) {
+    $end_time->modify('+' . strval($date_interval->y) . ' years');
+  }
+  if ($date_interval->m) {
+    $end_time->modify('+' . strval($date_interval->m) . ' months');
+  }
+  if ($date_interval->d) {
+    $end_time->modify('+' . strval($date_interval->d) . ' days');
+  }
+  if ($date_interval->h) {
+    $end_time->modify('+' . strval($date_interval->h) . ' hours');
+  }
+  if ($date_interval->i) {
+    $end_time->modify('+' . strval($date_interval->i) . ' minutes');
+  }
+  if ($date_interval->s) {
+    $end_time->modify('+' . strval($date_interval->s) . ' seconds');
+  }
+}

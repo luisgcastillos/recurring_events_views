@@ -1,0 +1,5 @@
+recurring_events_views.settings:
+  title: Recurring Events Views Settings
+  description: Recurring Events Views description.
+  parent: system.admin_config_development
+  route_name: recurring_events_views.settings

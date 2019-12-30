@@ -1,0 +1,4 @@
+administer recurring_events_views:
+  title: Recurring Events Views
+  description: Configure permissions for Recurring Events Views
+  restrict access: TRUE
